@@ -37,6 +37,8 @@ struct so2_device_data {
 	/* TODO 2: add cdev member */
 	struct cdev so2_cdev;
 	/* TODO 4: add buffer with BUFSIZ elements */
+	int size;
+	char buff[BUFSIZ];
 	/* TODO 7: extra members for home */
 	/* TODO 3: add atomic_t access variable to keep track if file is opened */
 	atomic_t atm_var;
@@ -49,19 +51,19 @@ static int so2_cdev_open(struct inode *inode, struct file *file)
 	struct so2_device_data *data;
 
 	/* TODO 2: print message when the device file is open. */
-	if (file != NULL)
-		pr_info("File is open!\n");
+	pr_info("File is open!\n");
 
 	/* TODO 3: inode->i_cdev contains our cdev struct, use container_of to obtain a pointer to so2_device_data */
 	data = container_of(inode->i_cdev, struct so2_device_data, so2_cdev);
 	file->private_data = data;
 
 	/* TODO 3: return immediately if access is != 0, use atomic_cmpxchg */
-	if (atomic_cmpxchg(&data->atm_var, 0, 1))
+	if (atomic_cmpxchg(&data->atm_var, 0, 1) != 0)
 		return -EBUSY;
 
 	set_current_state(TASK_INTERRUPTIBLE);
-	schedule_timeout(10 * HZ);
+	schedule_timeout(1000);
+	
 
 	return 0;
 }
@@ -70,8 +72,7 @@ static int
 so2_cdev_release(struct inode *inode, struct file *file)
 {
 	/* TODO 2: print message when the device file is closed. */
-	if (file != NULL)
-		pr_info("File is closed!\n");
+	pr_info("File is closed!\n");
 
 #ifndef EXTRA
 	struct so2_device_data *data =
@@ -97,7 +98,15 @@ so2_cdev_read(struct file *file,
 #endif
 
 	/* TODO 4: Copy data->buffer to user_buffer, use copy_to_user */
+	if (data->size - (*offset) < size)
+		to_read = data->size - (*offset);
+	else
+		to_read = size;
 
+	if (copy_to_user(user_buffer, data->buff, to_read))
+		return -EFAULT;
+	
+	*offset += to_read;
 	return to_read;
 }
 
@@ -140,7 +149,9 @@ static const struct file_operations so2_fops = {
 	.open = so2_cdev_open,
 	.release = so2_cdev_release,
 /* TODO 4: add read function */
+	.read = so2_cdev_read,
 /* TODO 5: add write function */
+	.write = so2_cdev_write
 /* TODO 6: add ioctl function */
 };
 
@@ -164,6 +175,8 @@ static int so2_cdev_init(void)
 		/* TODO 7: extra tasks, for home */
 #else
 		/*TODO 4: initialize buffer with MESSAGE string */
+		devs[i].size = (int)sizeof(MESSAGE);
+		strncpy(devs[i].buff, MESSAGE, sizeof(MESSAGE));
 #endif
 		/* TODO 7: extra tasks for home */
 		/* TODO 3: set access variable to 0, use atomic_set */
