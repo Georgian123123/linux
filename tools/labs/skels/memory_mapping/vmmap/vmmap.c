@@ -120,19 +120,27 @@ static int my_seq_show(struct seq_file *seq, void *v)
 	unsigned long total = 0;
 
 	/* TODO 3: Get current process' mm_struct */
+	mm = get_task_mm(current);
 
 	/* TODO 3: Iterate through all memory mappings and print ranges */
+	do {
+		vma_iterator = mm->mmap;
+		seq_printf(seq, "(%ld : %ld)", vma_iterator->vm_start, vma_iterator->vm_end);
+		total = vma_iterator->vm_end - vma_iterator->vm_start + 1;
+		vma_iterator = vma_iterator->vm_next;
+	} while(vma_iterator != NULL);
 
 	/* TODO 3: Release mm_struct */
-
+	mmput(mm);
 	/* TODO 3: write the total count to file  */
+	seq_printf(seq, "ttl: %ld", total);
 	return 0;
 }
 
 static int my_seq_open(struct inode *inode, struct file *file)
 {
 	/* TODO 3: Register the display function */
-	return 0;
+	return single_open(file, my_seq_show, NULL);
 }
 
 static const struct proc_ops my_proc_ops = {
@@ -146,7 +154,14 @@ static int __init my_init(void)
 {
 	int ret = 0;
 	int i;
+	struct proc_dir_entry *procfs_entry;
+
 	/* TODO 3: create a new entry in procfs */
+	procfs_entry = proc_create(PROC_ENTRY_NAME, 0, NULL, &my_proc_ops);
+	if (!procfs_entry) {
+		pr_err("could not register procfs entry\n");
+		goto out;
+	}
 
 	ret = register_chrdev_region(MKDEV(MY_MAJOR, 0), 1, "mymap");
 	if (ret < 0) {
@@ -202,6 +217,7 @@ static void __exit my_exit(void)
 		
 	unregister_chrdev_region(MKDEV(MY_MAJOR, 0), 1);
 	/* TODO 3: remove proc entry */
+	remove_proc_entry(PROC_ENTRY_NAME, NULL);
 }
 
 module_init(my_init);
