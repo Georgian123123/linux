@@ -75,7 +75,7 @@ static void my_xfer_request(struct my_block_dev *dev, struct request *req)
 {
 	/* TODO 6: iterate segments */
 
-		/* TODO 6: copy bio data to device buffer */
+	/* TODO 6: copy bio data to device buffer */
 }
 #endif
 
@@ -85,13 +85,20 @@ static blk_status_t my_block_request(struct blk_mq_hw_ctx *hctx,
 	struct request *rq;
 	struct my_block_dev *dev = hctx->queue->queuedata;
 
-	/* TODO 2: get pointer to request */
+	// /* TODO 2: get pointer to request */
+	// rq = bd->rq;
+	// /* TODO 2: start request processing. */
+	// blk_mq_start_request(rq);
+	// /* TODO 2: check fs request. Return if passthrough. */
+	// if (blk_rq_is_passthrough(rq)) {
+    //     printk (KERN_NOTICE "Skip non-fs request\n");
+    //     blk_mq_end_request(rq, BLK_STS_IOERR);
+    //     goto out;
+    // }
 
-	/* TODO 2: start request processing. */
-
-	/* TODO 2: check fs request. Return if passthrough. */
-
+	// pr_info("Request received!\n");
 	/* TODO 2: print request information */
+	
 
 #if USE_BIO_TRANSFER == 1
 	/* TODO 6: process the request by calling my_xfer_request */
@@ -179,7 +186,11 @@ static int __init my_block_init(void)
 	int err = 0;
 
 	/* TODO 1: register block device */
-
+    err = register_blkdev(MY_BLOCK_MAJOR, MY_BLKDEV_NAME);
+    if (err < 0) {
+             pr_info("unable to register mybdev block device\n");
+             return -EBUSY;
+     }
 	/* TODO 2: create block device using create_block_device */
 
 	return 0;
@@ -209,6 +220,7 @@ static void __exit my_block_exit(void)
 	/* TODO 2: cleanup block device using delete_block_device */
 
 	/* TODO 1: unregister block device */
+	unregister_blkdev(MY_BLOCK_MAJOR, MY_BLKDEV_NAME);
 }
 
 module_init(my_block_init);
