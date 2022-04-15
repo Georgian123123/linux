@@ -85,19 +85,21 @@ static blk_status_t my_block_request(struct blk_mq_hw_ctx *hctx,
 	struct request *rq;
 	struct my_block_dev *dev = hctx->queue->queuedata;
 
-	// /* TODO 2: get pointer to request */
-	// rq = bd->rq;
-	// /* TODO 2: start request processing. */
-	// blk_mq_start_request(rq);
-	// /* TODO 2: check fs request. Return if passthrough. */
-	// if (blk_rq_is_passthrough(rq)) {
-    //     printk (KERN_NOTICE "Skip non-fs request\n");
-    //     blk_mq_end_request(rq, BLK_STS_IOERR);
-    //     goto out;
-    // }
+	/* TODO 2: get pointer to request */
+	rq = bd->rq;
+	/* TODO 2: start request processing. */
+	blk_mq_start_request(rq);
+	/* TODO 2: check fs request. Return if passthrough. */
+	if (blk_rq_is_passthrough(rq)) {
+        printk (KERN_NOTICE "Skip non-fs request\n");
+        blk_mq_end_request(rq, BLK_STS_IOERR);
+        goto out;
+    }
 
-	// pr_info("Request received!\n");
+	pr_info("Request received!\n");
 	/* TODO 2: print request information */
+	pr_info("Directon = %c, start_sector = %lld, total_data_len = %d, current_Data_len = %d\n",
+			(rq_data_dir(rq)) ? 'W' : 'R',blk_rq_pos(rq), blk_rq_bytes(rq), blk_rq_cur_bytes (rq));
 	
 
 #if USE_BIO_TRANSFER == 1
@@ -107,7 +109,7 @@ static blk_status_t my_block_request(struct blk_mq_hw_ctx *hctx,
 #endif
 
 	/* TODO 2: end request successfully */
-
+	blk_mq_end_request(rq, BLK_STS_OK);
 out:
 	return BLK_STS_OK;
 }
@@ -181,24 +183,6 @@ out_vmalloc:
 	return err;
 }
 
-static int __init my_block_init(void)
-{
-	int err = 0;
-
-	/* TODO 1: register block device */
-    err = register_blkdev(MY_BLOCK_MAJOR, MY_BLKDEV_NAME);
-    if (err < 0) {
-             pr_info("unable to register mybdev block device\n");
-             return -EBUSY;
-     }
-	/* TODO 2: create block device using create_block_device */
-
-	return 0;
-
-out:
-	/* TODO 2: unregister block device in case of an error */
-	return err;
-}
 
 static void delete_block_device(struct my_block_dev *dev)
 {
@@ -213,6 +197,26 @@ static void delete_block_device(struct my_block_dev *dev)
 		blk_mq_free_tag_set(&dev->tag_set);
 	if (dev->data)
 		vfree(dev->data);
+}
+
+static int __init my_block_init(void)
+{
+	int err = 0;
+
+	/* TODO 1: register block device */
+    err = register_blkdev(MY_BLOCK_MAJOR, MY_BLKDEV_NAME);
+    if (err < 0) {
+             pr_info("unable to register mybdev block device\n");
+             return -EBUSY;
+     }
+	/* TODO 2: create block device using create_block_device */
+	create_block_device(&g_dev);
+	return 0;
+
+out:
+	/* TODO 2: unregister block device in case of an error */
+	delete_block_device(&g_dev);
+	return err;
 }
 
 static void __exit my_block_exit(void)
