@@ -45,6 +45,10 @@ static int test_daddr(unsigned int dst_addr)
 	/* TODO 2: return non-zero if address has been set
 	 * *and* matches dst_addr
 	 */
+	if (atomic_read(&ioctl_set) == 1)
+		ret = (ioctl_set_addr == dst_addr);
+	else
+		ret = 1;
 
 	return ret;
 }
@@ -54,20 +58,17 @@ static unsigned int my_nf_hookfn(void *priv,
 		struct sk_buff *skb,
 		const struct nf_hook_state *state)
 {
-	/* get IP header */
 	struct iphdr *iph = ip_hdr(skb);
 
 	if (iph->protocol == IPPROTO_TCP && test_daddr(iph->daddr)) {
-		/* get TCP header */
 		struct tcphdr *tcph = tcp_hdr(skb);
-		/* test for connection initiating packet */
 		if (tcph->syn && !tcph->ack)
-			printk(LOG_LEVEL "TCP connection initiated from "
+			printk("TCP connection initiated from "
 				"%pI4:%u\n",
 				&iph->saddr, ntohs(tcph->source));
 	}
 
-	/* let the package pass */
+
 	return NF_ACCEPT;
 }
 
@@ -86,6 +87,10 @@ static long my_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	switch (cmd) {
 	case MY_IOCTL_FILTER_ADDRESS:
 		/* TODO 2: set filter address from arg */
+		if (copy_from_user(&ioctl_set_addr, (void *) arg,
+					sizeof(ioctl_set_addr)))
+			return -EFAULT;
+		atomic_set(&ioctl_set, 1);
 		break;
 
 	default:
