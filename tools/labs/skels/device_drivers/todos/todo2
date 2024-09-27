@@ -1,0 +1,6 @@
+so2_cdev: loading out-of-tree module taints kernel.
+Failed registration! Error code: -16!
+insmod: can't insert 'so2_cdev.ko': Device or resource busy
+
+Am uitat sa trimit doar asta la exercitiul precedent, si
+am trimis tot cu modificarea in 254, acum trimit TODO2

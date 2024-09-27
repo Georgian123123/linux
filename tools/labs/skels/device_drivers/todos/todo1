@@ -1,0 +1,24 @@
+In urma comenzii: cat /proc/devices | less dupa insmod so2_cdev.ko
+  2 pty
+  3 ttyp
+  4 /dev/vc/0
+  4 tty
+  5 /dev/tty
+  5 /dev/console
+  5 /dev/ptmx
+  7 vcs
+ 10 misc
+ 13 input
+ 42 SO2_CDEV
+128 ptm
+136 pts
+229 hvc
+253 virtio-portsdev
+254 bsg
+
+Block devices:
+  7 loop
+254 virtblk
+259 blkext
+
+~
